@@ -33,7 +33,6 @@ public class VideoRestController {
     }
 
 
-    ///// *** Caricamento del video in Locale ***
     @PostMapping("/upload")
     public Video uploadVideo(@RequestParam("file") MultipartFile file, @RequestParam("title") String title) {
         // Verifica la dimensione del file
@@ -42,15 +41,21 @@ public class VideoRestController {
         }
 
         try {
-            // Salva il file localmente
+            // Crea la cartella "uploaded_videos" nella directory del progetto se non esiste
+            File directory = new File("uploaded_videos");
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            // Salva il file nella cartella "uploaded_videos"
             String fileName = file.getOriginalFilename();
-            String filePath = "src/main/resources/videos/" + fileName;
+            String filePath = directory.getAbsolutePath() + File.separator + fileName;
             file.transferTo(new File(filePath));
 
             // Salva il video nel database
             Video video = new Video();
             video.setTitle(title);
-            video.setFilePath(filePath);  // Salva il percorso del file
+            video.setFilePath(filePath);
             videoRepository.save(video);
 
             return video;
@@ -58,6 +63,7 @@ public class VideoRestController {
             throw new RuntimeException("Errore durante il caricamento del file", e);
         }
     }
+
 
 
 
