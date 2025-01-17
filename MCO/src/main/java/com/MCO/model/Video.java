@@ -1,5 +1,7 @@
 package com.MCO.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
@@ -7,6 +9,7 @@ import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "videos")
@@ -23,8 +26,8 @@ public class Video {
     private String filePath;
     private String thumbnailUrl;
 
-    @Max(1000)
-    private Integer durationInSeconds;
+//    @Max(1000)
+    private String durationInSeconds;
 
     @Size(max = 550)
     private String description;
@@ -35,6 +38,9 @@ public class Video {
     @CreationTimestamp
     private LocalDateTime  uploadedBy; //  (FK → users.id): Indica chi ha caricato il video.
 
+    @ManyToMany(mappedBy = "videos")
+    @JsonIgnore
+    private List<PlayList> playlists;
 
 
     //**** CONSTRUCTOR *****
@@ -95,11 +101,27 @@ public class Video {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    public Integer getDurationInSeconds() {
+    public String getDurationInSeconds() {
         return durationInSeconds;
     }
 
-    public void setDurationInSeconds(Integer durationInSeconds) {
+    public void setDurationInSeconds(String durationInSeconds) {
         this.durationInSeconds = durationInSeconds;
+    }
+
+    public LocalDateTime getUploadedBy() {
+        return uploadedBy;
+    }
+
+    public void setUploadedBy(LocalDateTime uploadedBy) {
+        this.uploadedBy = uploadedBy;
+    }
+
+    public List<PlayList> getPlaylists() {
+        return playlists;
+    }
+
+    public void setPlaylists(List<PlayList> playlists) {
+        this.playlists = playlists;
     }
 }

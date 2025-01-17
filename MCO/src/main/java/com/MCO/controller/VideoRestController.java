@@ -1,19 +1,27 @@
 package com.MCO.controller;
 
 import com.MCO.model.Video;
+import com.MCO.model.dto.VideoDTO;
 import com.MCO.repository.VideoRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
+//
 
 @RestController
 @RequestMapping("/api/v1/videos")
-@CrossOrigin // Consente richieste cross-origin
+@CrossOrigin
 public class VideoRestController {
 
     @Autowired
@@ -25,16 +33,52 @@ public class VideoRestController {
         return videoRepository.findAll();
     }
 
-    // Endpoint per creare un nuovo video
-    @PostMapping
-    public Video create(@RequestBody @Valid Video video) {
-        // La validazione viene eseguita tramite l'annotazione @Valid
-        return videoRepository.save(video);
+    // Metodo per restituire un DTO invece degli oggetti video**********
+    @GetMapping("/videos")
+    public List<VideoDTO> getAllVideos() {
+        return videoRepository.findAll().stream()
+                .map(VideoDTO::new) // Converte ogni Video in VideoDTO
+                .toList();
+    }
+    // Metodo per restituire i video staticamente**********
+    @GetMapping("/videos/{fileName}")
+    public ResponseEntity<Resource> getVideoFile(@PathVariable String fileName) {
+        try {
+            // Ottieni il percorso assoluto del file utilizzando Paths
+            java.nio.file.Path filePath = Paths.get("uploaded_videos").resolve(fileName).toAbsolutePath();
+            File file = filePath.toFile();
+
+            // Verifica che il file esista
+            if (!file.exists() || !file.isFile()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Crea la risorsa per il file
+            UrlResource resource = new UrlResource(file.toURI());
+
+            // Determina il tipo MIME
+            MediaType mediaType = MediaTypeFactory.getMediaType(fileName)
+                    .orElse(MediaType.APPLICATION_OCTET_STREAM);
+
+            // Restituisci il file come risorsa
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .body(resource);
+
+        } catch (IOException e) {
+            // Gestione degli errori
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
 
+
+
+
+
+
     @PostMapping("/upload")
-    public Video uploadVideo(@RequestParam("file") MultipartFile file, @RequestParam("title") String title) {
+    public Video uploadVideo(@RequestParam("file") MultipartFile file, @RequestParam("title") String title,  @RequestParam("duration_in_seconds") String durationInSeconds) {
         // Verifica la dimensione del file
         if (file.getSize() > 300 * 1024 * 1024) { // 300MB
             throw new RuntimeException("Il file è troppo grande. La dimensione massima consentita è 300MB.");
@@ -56,6 +100,8 @@ public class VideoRestController {
             Video video = new Video();
             video.setTitle(title);
             video.setFilePath(filePath);
+            video.setDurationInSeconds(durationInSeconds);
+            System.out.println("durationInSeconds" + durationInSeconds);
             videoRepository.save(video);
 
             return video;
@@ -63,6 +109,9 @@ public class VideoRestController {
             throw new RuntimeException("Errore durante il caricamento del file", e);
         }
     }
+
+
+
 
 
 
